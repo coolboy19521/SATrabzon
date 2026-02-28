@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    #question-box *{
+        font-size:22px;
+    }
+    #question-button{
+        margin-top:16px;
+    }
+    #content-box {
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+    }
+    .option-button{
+        margin: 10px 0;
+        display: inline-block;
+        width: 100%;
+        text-align: left;
+        box-sizing: border-box;
+        padding: 8px 12px;
+    }
+</style>
+<fieldset id="content-box">
+    <legend>Question {{ index + 1 }}</legend>
+    <button id="question-button" onclick="prev_question()">Previous question</button>
+    <button id="question-button" onclick="next_question()">Next question</button>
+    <div id="question-box">
+        <p><b>{{ index + 1 }}.</b> {{ question[0] }}</p>
+        <button class="option-button" id="btn-1" text-align="justify"><b>A. </b>{{ question[1][1 + (question[6] == 2)] }}</button><br>
+        <button class="option-button" id="btn-2" text-align="justify"><b>B. </b>{{ question[2][1 + (question[6] == 2)] }}</button><br>
+        <button class="option-button" id="btn-3" text-align="justify"><b>C. </b>{{ question[3][1 + (question[6] == 2)] }}</button><br>
+        <button class="option-button" id="btn-4" text-align="justify"><b>D. </b>{{ question[4][1 + (question[6] == 2)] }}</button><br>
+    </div>
+</fieldset>
+<script>
+    document.querySelector('#pin-box').value = '{{ pin }}'
+    dict = {}
+    fill = async () => {
+        response = await fetch('/selected/{{ pin }}')
+        checkboxes = await response.json()
+        for (checkbox of checkboxes){
+            element = document.querySelector('#' + CSS.escape(checkbox))
+            id = checkbox.substring(0, checkbox.lastIndexOf('-'))
+            if (dict[id] == undefined) dict[id] = 0
+            dict[id] ++;
+            parent = document.querySelector('#' + CSS.escape(`${id}`))
+            panel = document.querySelectorAll('#' + CSS.escape(`panel-${id}`) + ' input')
+            if (dict[id] == 0) parent.checked = false
+            else if (dict[id] == panel.length){
+                parent.indeterminate = false
+                parent.checked = true
+            }
+            else parent.indeterminate = true
+            element.checked = true
+        }
+    }
+    prev_question = () => {
+        if (Number("{{ index - 1 }}") >= 0)
+            window.location.href = '/mainloop/{{ pin }}/{{ index - 1 }}'
+    }
+    next_question = () => {
+        window.location.href = '/mainloop/{{ pin }}/{{ index + 1 }}'
+    }
+    op_btns = document.querySelectorAll('.option-button')
+    question = {{ question | tojson }}
+    done = false
+    for (btn of op_btns){
+        btn.addEventListener('click', function(){
+            if (!done){
+                for ([ix, oth] of op_btns.entries()){
+                    if (question[6] < 2)
+                        oth.innerHTML += `<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<i>${question[ix + 1][2]}</i><br><br>`
+                    else
+                        oth.innerHTML += `<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<i>${question[ix + 1][1]}</i><br><br>`
+                }
+                if (this.id != `btn-${question[5] + 1}`){
+                    this.style.borderColor = 'red'
+                    this.style.borderWidth = '2px'
+                }
+                document.querySelector(`#btn-${question[5] + 1}`).style.borderColor = 'green'
+                document.querySelector(`#btn-${question[5] + 1}`).style.borderWidth = '2px'
+                done = true
+            }
+        })
+    }
+    fill()
+</script>
+{% endblock content %}
