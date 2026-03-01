@@ -52,7 +52,6 @@ def get_question(pin, index):
         random.shuffle(words)
         index -= len(words) // OPT_SIZ
     options = words[index * OPT_SIZ : (index + 1) * OPT_SIZ]
-    print(options[chosen], options)
     match question_type:
         case 0: question = (options[chosen][2], *options, chosen, 0)
         case 1:
@@ -71,7 +70,7 @@ def get_question(pin, index):
                 random.seed(seed << index)
                 index = random.randint(0, 1 << BIT_SIZ)
                 index = index // ALT_CNT * ALT_CNT
-                index = index + 1 - index % 3
+                index += (4 - (index // ALT_CNT % 3)) * ALT_CNT
                 return get_question(hex(pin), index)
             options[chosen][1] = in_sentence
             if is_lower:
