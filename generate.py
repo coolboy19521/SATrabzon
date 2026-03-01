@@ -3,6 +3,7 @@ import csv
 import copy
 import random
 
+QST_TYP = 3
 OPT_SIZ = 4
 ALT_CNT = 4
 BIT_SIZ = 12
@@ -46,13 +47,13 @@ def get_question(pin, index):
             package_index, set_index = package_index + 1, 0
         if pin & 1 << i: words += all_words[package_index][set_index]
         set_index += 1
-    question_type = index // ALT_CNT % 3
+    question_type = index // ALT_CNT % QST_TYP
     revolution_count = (index // len(words)) + 1
     seed = pin >> prefix_sum[-1]
     answer_rng = random.Random(seed << revolution_count << question_type)
     answer_rng.shuffle(words)
     local_index = index % len(words)
-    ans = words[((local_index // ALT_CNT) // 3) * ALT_CNT + (local_index % ALT_CNT)]
+    ans = words[((local_index // ALT_CNT) // QST_TYP) * ALT_CNT + (local_index % ALT_CNT)]
     shuffle_rng = random.Random(seed)
     word_revolution = OPT_SIZ * index // len(words)
     for _ in range(word_revolution): shuffle_rng.shuffle(words)
@@ -60,8 +61,8 @@ def get_question(pin, index):
     words = words + words[:OPT_SIZ]
     options = [ans.copy()]
     for i in range(option_index, len(words)):
+        if len(options) >= OPT_SIZ: break
         if words[i] not in options: options.append(words[i].copy())
-        if len(options) == 4: break
     choice_rng = random.Random(seed << index)
     answer_index = choice_rng.randint(0, OPT_SIZ - 1)
     options[0], options[answer_index] = options[answer_index], options[0]
@@ -80,7 +81,7 @@ def get_question(pin, index):
                 for obey_word in OBY_PRF: can_obey = can_obey or in_sentence.endswith(obey_word)
             if can_obey:
                 big_half = (1 << (BIT_SIZ - 1))
-                ix = choice_rng.randint(big_half, 2 * big_half) * 3 * ALT_CNT
+                ix = choice_rng.randint(big_half, 2 * big_half) * QST_TYP * ALT_CNT
                 return get_question(hex(pin), ix)
             options[answer_index][1] = in_sentence
             if is_lower:

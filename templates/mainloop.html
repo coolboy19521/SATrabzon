@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
+{% set alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
 <fieldset id="content-box">
     <legend>Question {{ index + 1 }}</legend>
     <button id="question-button" onclick="prev_question()">Previous question</button>
     <button id="question-button" onclick="next_question()">Next question</button>
     <div id="question-box">
         <p><b>{{ index + 1 }}.</b> {{ question[0] }}</p>
-        <button class="option-button" id="btn-1" text-align="justify"><b>A. </b>{{ question[1][1 + (question[6] == 2)] }}</button><br>
-        <button class="option-button" id="btn-2" text-align="justify"><b>B. </b>{{ question[2][1 + (question[6] == 2)] }}</button><br>
-        <button class="option-button" id="btn-3" text-align="justify"><b>C. </b>{{ question[3][1 + (question[6] == 2)] }}</button><br>
-        <button class="option-button" id="btn-4" text-align="justify"><b>D. </b>{{ question[4][1 + (question[6] == 2)] }}</button><br>
+        {% for i in range(1,question|length - 2) %}
+            <button class="option-button" id="btn-{{ i }}" text-align="justify"><b>{{ alphabet[i - 1] }}. </b>{{ question[i][1 + (question[-1] == 2)] }}</button><br>
+        {% endfor %}
     </div>
 </fieldset>
 <script>
@@ -53,12 +53,12 @@
                     else
                         oth.innerHTML += `<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<i>${question[ix + 1][1]}</i><br><br>`
                 }
-                if (this.id != `btn-${question[5] + 1}`){
+                if (this.id != `btn-${question[question.length - 2] + 1}`){
                     this.style.borderColor = 'red'
                     this.style.borderWidth = '2px'
                 }
-                document.querySelector(`#btn-${question[5] + 1}`).style.borderColor = 'green'
-                document.querySelector(`#btn-${question[5] + 1}`).style.borderWidth = '2px'
+                document.querySelector(`#btn-${question[question.length - 2] + 1}`).style.borderColor = 'green'
+                document.querySelector(`#btn-${question[question.length - 2] + 1}`).style.borderWidth = '2px'
                 done = true
             }
         })
