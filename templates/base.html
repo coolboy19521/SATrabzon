@@ -81,6 +81,10 @@
                 height: 100%;
             }
 
+            #container>fieldset{
+                flex-shrink: 0;
+            }
+
             @media (max-width: 1000px) {
                 #container {
                     flex-direction: column-reverse;
@@ -166,10 +170,12 @@
             }
             generate = async () => {
                 checkedBoxes = document.querySelectorAll('input[name="sets"]:checked')
-                values = Array.from(checkedBoxes).map(cb => cb.value)
-                data = {included: values}
-                response = await fetch('/generate', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})
-                document.querySelector('#pin-box').value = await response.json()
+                if (checkedBoxes.length > 0){
+                    values = Array.from(checkedBoxes).map(cb => cb.value)
+                    data = {included: values}
+                    response = await fetch('/generate', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})
+                    document.querySelector('#pin-box').value = await response.json()
+                }
             }
             start = () => {
                 pin = document.querySelector('#pin-box').value
