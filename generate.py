@@ -1,5 +1,6 @@
 import os
 import csv
+import copy
 import random
 
 OPT_SIZ = 4
@@ -44,14 +45,15 @@ def get_question(pin, index):
         if pin & 1 << i: words += all_words[package_index][set_index]
         set_index += 1
     question_type = index // ALT_CNT % 3
-    random.seed((seed := pin >> prefix_sum[-1]) << index)
+    seed_index = index
+    random.seed((seed := pin >> prefix_sum[-1]) << seed_index)
     chosen = random.randint(0, OPT_SIZ - 1)
     random.seed(seed)
     random.shuffle(words)
     while (index + 1) * OPT_SIZ >= len(words):
         random.shuffle(words)
         index -= len(words) // OPT_SIZ
-    options = words[index * OPT_SIZ : (index + 1) * OPT_SIZ]
+    options = copy.deepcopy(words[index * OPT_SIZ : (index + 1) * OPT_SIZ])
     match question_type:
         case 0: question = (options[chosen][2], *options, chosen, 0)
         case 1:
@@ -67,7 +69,7 @@ def get_question(pin, index):
             if not can_obey:
                 for obey_word in OBY_PRF: can_obey = can_obey or in_sentence.endswith(obey_word)
             if can_obey:
-                random.seed(seed << index)
+                random.seed(seed << seed_index)
                 index = random.randint(0, 1 << BIT_SIZ)
                 index = index // ALT_CNT * ALT_CNT
                 index += (4 - (index // ALT_CNT % 3)) * ALT_CNT
