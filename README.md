@@ -5,4 +5,4 @@ Repository includes all the scripts used to collect the data. Some data is added
 
 To extract data from the pdf conflate-py is used.
 
-Note: There is a burried feature of the app, which enables having more or less than 4 options for a question. I added it for modularity, but I don't find it practical to have in the interface. LOL.
+Note: There is a buried feature of the app, which enables having more or less than 4 options for a question. I added it for modularity, but I don't find it practical to have in the interface. LOL.
