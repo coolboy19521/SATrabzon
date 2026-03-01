@@ -17,12 +17,12 @@ def generate_pin():
         package_index = int(package_names.index(include[:include.rindex('-')]))
         set_index = int(include[include.rindex('-') + 1:])
         sterile_included.append((package_index, set_index))
-    pin = generate.generate_pin(sterile_included)
+    pin = generate.get_pin(sterile_included)
     return flask.jsonify(pin)
 
 @app.route('/selected/<pin>', methods=['GET'])
 def selected(pin):
-    pin = int(pin, generate.BIT_SIZ)
+    pin = int(pin, generate.REP_SIZ)
     selected_boxes = []
     package_index, set_index = 0, 0
     for i in range(generate.prefix_sum[-1]):

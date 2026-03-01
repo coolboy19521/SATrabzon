@@ -1,108 +1,18 @@
 <!doctype html>
-<html>
+<html lang="en">
     <head>
+        <meta charset="UTF-8">
         <title>SATrabzon</title>
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            html,body{
-                overflow: hidden;
-            }
-            @media (max-width: 1000px) {
-                html,body{
-                    overflow: visible;
-                }
-            }
-            *{
-                font-family: Calibri;
-                font-size: 18px;
-            }
-            @media (max-width: 500px) {
-                *{
-                    font-size: 14px;
-                }
-            }
-            button{
-                background-color:white;
-                border:1px solid black;
-                border-radius: 10px;
-                cursor:pointer;
-            }
-            .opener{
-                float:right;
-                margin-left:13px;
-            }
-            .package{
-                margin:16px 5px 16px 0;
-            }
-            .panel{
-                display: none;
-                overflow: hidden;
-            }
-            fieldset{
-                height:97vh;
-                display:inline-block;
-                overflow-y: auto;
-                overflow-x: hidden;
-                box-sizing: border-box;
-            }
-            @media (max-width: 1000px) {
-                fieldset{
-                    height: auto;
-                }
-            }
-
-            hr{
-                margin:20px 0;
-            }
-
-            #generate-row {
-                width: auto;
-                margin:auto;
-            }
-
-            #generate-row input {
-                width: calc(100% - 100px);
-                box-sizing: border-box;
-            }
-
-            input:focus{
-                outline: none;
-            }
-
-            #generate-row button {
-                width: 90px;
-                float: right;
-            }
-
-            #start{
-                margin-top:15px;
-                width:100%;
-            }
-
-            #container {
-                display: flex;
-                height: 100%;
-            }
-
-            #container>fieldset{
-                flex-shrink: 0;
-            }
-
-            @media (max-width: 1000px) {
-                #container {
-                    flex-direction: column-reverse;
-                }
-            }
-
-            #content {
-                flex-grow: 1;
-                overflow-y: auto;
-            }
-            a{
-                text-decoration:none;
-            }
-        </style>
+        <meta property="og:title" content="SATrabzon">
+        <meta property="og:description" content="SATrabzon vocabulary questions.">
+        <meta property="og:image" content="{{ url_for('static', filename='image.png') }}">
+        <meta property="og:url" content="https://satrabzon.pythonanywhere.com">
+        <meta name="description" content="SATrabzon vocabulary questions.">
+        <meta name="keywords" content="SATrabzon, SAT, vocabulary">
+        <meta name="author" content="Ehmed Qemberli">
     </head>
     <body>
         <div id="container">
@@ -113,14 +23,12 @@
                         <div>
                             <input type="checkbox" class="meta" id="{{ package[0] }}" />
                             <label for="{{ package[0] }}">
-                                {% set name = package[0].split('-') %}
-                                {% for word in name %}
+                                {% for word in package[0].split('-') %}
                                     {{ word|capitalize }}
                                 {% endfor %}
                             </label>
                             <button id="{{ package[0] }}" class="opener">Show sets</button>
                         </div>
-                        
                         <div class="panel" id="panel-{{ package[0] }}">
                             {% for i in range(package[1]|int) %}
                                 <div>
@@ -136,7 +44,7 @@
                 <a href="/">SATrabzon©, Since 28.02.2026, Vocabulary Preparation</a>
                 <hr>
                 <div id="generate-row">
-                    <input id="pin-box" spellcheck="false">
+                    <input id="pin-box" spellcheck="false" placeholder="Vocab pin" autocomplete="off">
                     <button id="generate" onclick="generate()">Generate</button>
                 </div>
                 <div>

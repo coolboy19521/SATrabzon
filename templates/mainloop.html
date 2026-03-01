@@ -1,31 +1,5 @@
 {% extends 'base.html' %}
 {% block content %}
-<style>
-    #question-box *{
-        font-size:22px;
-    }
-    @media (max-width: 500px) {
-        #question-box *{
-            font-size:18px;
-        }
-    }
-    #question-button{
-        margin-top:16px;
-    }
-    #content-box {
-        width: 100%;
-        box-sizing: border-box;
-        margin: 0;
-    }
-    .option-button{
-        margin: 10px 0;
-        display: inline-block;
-        width: 100%;
-        text-align: left;
-        box-sizing: border-box;
-        padding: 8px 12px;
-    }
-</style>
 <fieldset id="content-box">
     <legend>Question {{ index + 1 }}</legend>
     <button id="question-button" onclick="prev_question()">Previous question</button>
