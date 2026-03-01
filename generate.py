@@ -12,7 +12,6 @@ ORG_CNS = 30
 PNC_SYM = ',.:-'
 SRC_DIR = 'sets'
 PLC_HLD = '______'
-OBY_PRF = ('ed', 'ing')
 PKG_FIL = 'packages.csv'
 OBY_WRD = ('to', 'a', 'the', 'an')
 
@@ -38,6 +37,25 @@ def get_pin(included):
     pin |= rng.randint(0, 1 << BIT_SIZ) << prefix_sum[-1]
     return hex(pin)
 
+def extract_example(search_word):
+    statement = list(search_word[3].split())
+    root = (search_word[1] + '(').lower()
+    root = [word for word in root[:root.index('(')].split() if word not in OBY_WRD][0]
+    is_lower, in_sentence = False, None
+    for i, word in enumerate(statement):
+        if word.lower().startswith(root):
+            statement[i] = PLC_HLD + (word[-1] if word[-1] in PNC_SYM else '')
+            is_lower, in_sentence = word.islower(), word[:-1] if word[-1] in PNC_SYM else word
+    return statement, is_lower, in_sentence
+
+def get_similarity(a, b):
+    if a is None or b is None: return 0
+    common_suffix = 0
+    for i in range(1, min(len(a), len(b))):
+        if a[-i] == b[-i]: common_suffix += 1
+        else: break
+    return common_suffix
+
 def get_question(pin, index):
     pin = int(pin, REP_SIZ)
     words = []
@@ -54,9 +72,26 @@ def get_question(pin, index):
     answer_rng.shuffle(words)
     local_index = index % len(words)
     ans = words[((local_index // ALT_CNT) // QST_TYP) * ALT_CNT + (local_index % ALT_CNT)]
-    shuffle_rng = random.Random(seed)
+    if question_type == 0:
+        statement, is_lower, in_sentence = extract_example(ans)
+        if in_sentence is not None:
+            supplemental_words = []
+            for word in words:
+                if word != ans:
+                    word_in_sentence = extract_example(word)[2]
+                    similarity_word = get_similarity(word, in_sentence)
+                    similarity_usage = get_similarity(word_in_sentence, in_sentence)
+                    if similarity_word > similarity_usage and similarity_word > 0:
+                        for _ in range(similarity_word): supplemental_words.append(word)
+                    elif similarity_usage > 0:
+                        words.remove(word)
+                        new_word = word.copy()
+                        new_word[1] = word_in_sentence.capitalize()
+                        for _ in range(similarity_usage + 1): supplemental_words.append(new_word)
+            for word in supplemental_words: words.append(word)
     word_revolution = OPT_SIZ * index // len(words)
-    for _ in range(word_revolution): shuffle_rng.shuffle(words)
+    shuffle_rng = random.Random(seed << word_revolution)
+    shuffle_rng.shuffle(words)
     option_index = (OPT_SIZ * index) % len(words)
     words = words + words[:OPT_SIZ]
     options = [ans.copy()]
@@ -68,18 +103,7 @@ def get_question(pin, index):
     options[0], options[answer_index] = options[answer_index], options[0]
     match question_type:
         case 0:
-            statement = list(options[answer_index][3].split())
-            root = (options[answer_index][1] + '(').lower()
-            root = [word for word in root[:root.index('(')].split() if word not in OBY_WRD][0]
-            is_lower, in_sentence = False, None
-            for i, word in enumerate(statement):
-                if word.lower().startswith(root):
-                    statement[i] = PLC_HLD + (word[-1] if word[-1] in PNC_SYM else '')
-                    is_lower, in_sentence = word.islower(), word[:-1] if word[-1] in PNC_SYM else word
-            can_obey = in_sentence is None
-            if not can_obey:
-                for obey_word in OBY_PRF: can_obey = can_obey or in_sentence.endswith(obey_word)
-            if can_obey:
+            if in_sentence is None:
                 big_half = (1 << (BIT_SIZ - 1))
                 ix = choice_rng.randint(big_half, 2 * big_half) * QST_TYP * ALT_CNT
                 return get_question(hex(pin), ix)
