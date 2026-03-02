@@ -89,9 +89,12 @@
                     document.querySelector('#pin-box').value = await response.json()
                 }
             }
-            start = () => {
+            start = async() => {
+                current_pin = "{{ pin }}"
+                if (current_pin.length > 0)
+                    await fetch('/clear', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({pin: current_pin})})
                 pin = document.querySelector('#pin-box').value
-                window.location.href = `/mainloop/${pin}/0`
+                if (pin.length > 0) window.location.href = `/mainloop/${pin}/0`
             }
             change = (element) => {
                 id = element.id

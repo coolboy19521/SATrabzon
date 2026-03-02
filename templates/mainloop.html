@@ -2,7 +2,7 @@
 {% block content %}
 {% set alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
 <fieldset id="content-box">
-    <legend>Question {{ index + 1 }}</legend>
+    <legend id="score">Score: {% if is_full %}<b>{{ correct_count }}</b>{% else %}{{ correct_count }}{% endif %} / <b>{{ question_count }}</b></legend>
     <button id="question-button" onclick="prev_question()">Previous question</button>
     <button id="question-button" onclick="next_question()">Next question</button>
     <div id="question-box">
@@ -45,15 +45,26 @@
     question = {{ question | tojson }}
     done = false
     for (btn of op_btns){
-        btn.addEventListener('click', function(){
+        btn.addEventListener('click', async function(){
             if (!done){
+                option = Number(this.id.split('-')[1] - 1)
+                is_correct = (option == question[question.length - 2])
+                if (choice == -1){
+                    data = {pin: "{{ pin }}", index: {{ index }}, option: option, is_correct: is_correct}
+                    response = await fetch('/answer', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})
+                    score_data = await response.json()
+                    document.querySelector('#score').innerHTML = `Score: `
+                    if (!score_data.is_full) document.querySelector('#score').innerHTML += `${score_data.correct_count} / `
+                    else document.querySelector('#score').innerHTML += `<b>${score_data.correct_count}</b> / `
+                    document.querySelector('#score').innerHTML += `<b>${score_data.question_count}</b>`
+                }
                 for ([ix, oth] of op_btns.entries()){
                     if (question[6] < 2)
                         oth.innerHTML += `<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<i>${question[ix + 1][2]}</i><br><br>`
                     else
                         oth.innerHTML += `<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<i>${question[ix + 1][1]}</i><br><br>`
                 }
-                if (this.id != `btn-${question[question.length - 2] + 1}`){
+                if (!is_correct){
                     this.style.borderColor = 'red'
                     this.style.borderWidth = '2px'
                 }
@@ -64,5 +75,9 @@
         })
     }
     fill()
+    choice = {{ choice }}
+    if (choice != -1){
+        op_btns[choice].click()
+    }
 </script>
 {% endblock content %}
