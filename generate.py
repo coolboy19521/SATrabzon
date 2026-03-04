@@ -3,7 +3,7 @@ import csv
 import copy
 import random
 
-COR_CNS = 2
+COR_CNS = 3
 QST_TYP = 3
 OPT_SIZ = 4
 ALT_CNT = 4
@@ -68,28 +68,37 @@ def get_question(pin, index):
     question_type = index // ALT_CNT % QST_TYP
     revolution_count = (index // len(words)) + 1
     seed = pin >> prefix_sum[-1]
-    answer_rng = random.Random(seed << revolution_count << question_type)
+    answer_rng = random.Random(seed << revolution_count)
     answer_rng.shuffle(words)
     local_index = index % len(words)
-    ans = words[((local_index // ALT_CNT) // QST_TYP) * ALT_CNT + (local_index % ALT_CNT)]
-    if question_type == 0:
-        statement, is_lower, in_sentence = extract_example(ans)
-        if in_sentence is not None:
+    ans = words[((local_index // ALT_CNT)) * ALT_CNT + (local_index % ALT_CNT)]
+    match question_type:
+        case 0:
+            statement, is_lower, in_sentence = extract_example(ans)
+            if in_sentence is not None:
+                supplemental_words, to_remove = [], []
+                for word in words:
+                    if word != ans:
+                        word_in_sentence = extract_example(word)[2]
+                        similarity_word = get_similarity(word[1], in_sentence)
+                        similarity_usage = get_similarity(word_in_sentence, in_sentence)
+                        if similarity_word > similarity_usage and similarity_word > 0:
+                            for _ in range(similarity_word * COR_CNS): supplemental_words.append(word)
+                        elif similarity_usage > 0:
+                            to_remove.append(word)
+                            new_word = word.copy()
+                            new_word[1] = word_in_sentence.capitalize()
+                            for _ in range(similarity_usage * COR_CNS + 1): supplemental_words.append(new_word)
+                for word in supplemental_words: words.append(word)
+                for word in to_remove: words.remove(word)
+        case 1:
             supplemental_words, to_remove = [], []
             for word in words:
                 if word != ans:
-                    word_in_sentence = extract_example(word)[2]
-                    similarity_word = get_similarity(word, in_sentence)
-                    similarity_usage = get_similarity(word_in_sentence, in_sentence)
-                    if similarity_word > similarity_usage and similarity_word > 0:
+                    similarity_word = get_similarity(word[1], ans[1])
+                    if similarity_word > 0:
                         for _ in range(similarity_word * COR_CNS): supplemental_words.append(word)
-                    elif similarity_usage > 0:
-                        to_remove.append(word)
-                        new_word = word.copy()
-                        new_word[1] = word_in_sentence.capitalize()
-                        for _ in range(similarity_usage * COR_CNS + 1): supplemental_words.append(new_word)
             for word in supplemental_words: words.append(word)
-            for word in to_remove: words.remove(word)
     word_revolution = OPT_SIZ * index // len(words)
     shuffle_rng = random.Random(seed << word_revolution)
     shuffle_rng.shuffle(words)
