@@ -73,7 +73,15 @@ def get_question(pin, index):
     local_index = index % len(words)
     ans = words[((local_index // ALT_CNT)) * ALT_CNT + (local_index % ALT_CNT)]
     match question_type:
-        case 0:
+        case 1:
+            supplemental_words, to_remove = [], []
+            for word in words:
+                if word != ans:
+                    similarity_word = get_similarity(word[1], ans[1])
+                    if similarity_word > 0:
+                        for _ in range(similarity_word * COR_CNS): supplemental_words.append(word)
+            for word in supplemental_words: words.append(word)
+        case _:
             statement, is_lower, in_sentence = extract_example(ans)
             if in_sentence is not None:
                 supplemental_words, to_remove = [], []
@@ -91,14 +99,6 @@ def get_question(pin, index):
                             for _ in range(similarity_usage * COR_CNS + 1): supplemental_words.append(new_word)
                 for word in supplemental_words: words.append(word)
                 for word in to_remove: words.remove(word)
-        case 1:
-            supplemental_words, to_remove = [], []
-            for word in words:
-                if word != ans:
-                    similarity_word = get_similarity(word[1], ans[1])
-                    if similarity_word > 0:
-                        for _ in range(similarity_word * COR_CNS): supplemental_words.append(word)
-            for word in supplemental_words: words.append(word)
     word_revolution = OPT_SIZ * index // len(words)
     shuffle_rng = random.Random(seed << word_revolution)
     shuffle_rng.shuffle(words)
