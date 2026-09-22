@@ -73,6 +73,9 @@ input:focus{
     width: 90px;
     float: right;
 }
+#qtype-row {
+    margin-top:10px;
+}
 #start{
     margin-top:15px;
     width:100%;
@@ -106,4 +109,71 @@ a:visited {
     text-align: left;
     box-sizing: border-box;
     padding: 8px 12px;
+}
+.box {
+    width:40px;
+    height:40px;
+    margin-right:10px;
+    border:1px solid black;
+    border-radius: 5px;
+    display:inline-block;
+    text-align: center;
+    align-content: center
+}
+.flex-break {
+  flex-basis: 100%;
+  height: 10px;
+}
+#box-container {
+    display: flex;
+    flex-wrap: wrap;
+	width:600px;
+}
+#satle-flex {
+    display:flex;
+	align-items: flex-start;
+}
+#keyboard {
+    display:flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-left:40px;
+}
+.keyboard-button {
+    margin-right:5px;
+    width:35px;
+}
+@media (max-width: 1000px) {
+	#satle-flex {
+		align-items:center;
+	}
+    .box {
+        width:35px;
+        height:35px;
+    }
+	.box-break {
+		flex-basis: 100%;
+		height: 10px;
+	}
+    #box-container, #keyboard {
+        justify-content: center;
+		width:auto;
+	}
+    #keyboard {
+        margin-left:0;
+        margin-top:30px;
+    }
+    #satle-flex {
+        flex-direction: column;
+    }
+    .keyboard-button {
+        margin-right:3px;
+        width:32px;
+    }
+}
+@media (max-width: 500px) {
+    .box {
+        width:26px;
+        height:26px;
+    }
 }

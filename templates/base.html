@@ -12,7 +12,7 @@
         <meta property="og:url" content="https://satrabzon.pythonanywhere.com">
         <meta name="description" content="SATrabzon vocabulary questions.">
         <meta name="keywords" content="SATrabzon, SAT, vocabulary">
-        <meta name="author" content="Ehmed Qemberli">
+        <meta name="author" content="Ahmad Gambarli">
     </head>
     <body>
         <div id="container">
@@ -46,6 +46,12 @@
                 <div id="generate-row">
                     <input id="pin-box" spellcheck="false" placeholder="Vocab pin" autocomplete="off">
                     <button id="generate" onclick="generate()">Generate</button>
+                </div>
+                <div id="qtype-row">
+                    <input type="radio" id="quiz" name="qtype" value="quiz" checked="true">
+                    <label for="quiz">Quiz</label><br>
+                    <input type="radio" id="satle" name="qtype" value="satle">
+                    <label for="satle">SATle</label><br>
                 </div>
                 <div>
                     <button id="start" onclick="start()">Start</button>
@@ -84,7 +90,8 @@
                 checkedBoxes = document.querySelectorAll('input[name="sets"]:checked')
                 if (checkedBoxes.length > 0){
                     values = Array.from(checkedBoxes).map(cb => cb.value)
-                    data = {included: values}
+                    qtype = document.querySelector('input[name="qtype"]:checked').value
+                    data = {included: values, qtype: qtype}
                     response = await fetch('/generate', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})
                     document.querySelector('#pin-box').value = await response.json()
                 }

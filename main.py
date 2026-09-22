@@ -10,6 +10,18 @@ app.secret_key = os.environ.get('SECRET_KEY')
 
 package_names = [i[0] for i in generate.packages]
 
+with open('nwords.txt', 'r') as src:
+    valid_words = [word.strip() for word in src.readlines()]
+
+def check_word(word):
+    l, r = 0, len(valid_words) - 1
+    while l <= r:
+        m = (l + r) // 2
+        if valid_words[m] == word:  return True
+        elif valid_words[m] > word: r = m - 1
+        else:                       l = m + 1
+    return False
+
 @app.route('/mainloop/<pin>/<int:index>')
 def mainloop(pin, index):
     if pin not in flask.session:
@@ -20,23 +32,31 @@ def mainloop(pin, index):
     if index + 1 > question_count:
         flask.session[pin]["question_count"] = (question_count := index + 1)
         flask.session.modified = True
-    question = generate.get_question(pin, index)
+    qtype = generate.get_type(pin)
+    match qtype:
+        case 'quiz':
+            question = generate.get_question(pin, index)
+        case 'satle':
+            question = generate.get_word(pin, index)
     choice = session_data["done"].get(str(index + 1), -1)
     is_full = len(session_data.get("done", None)) == question_count
     return flask.render_template('mainloop.html',
         packages = generate.packages, question = question, index = index, pin = pin,
-        correct_count = correct_count, question_count = question_count, choice = choice, is_full = is_full
+        correct_count = correct_count, question_count = question_count, choice = choice, is_full = is_full,
+        qtype = qtype
     )
 
 @app.route('/generate', methods=['POST'])
 def generate_pin():
     included = flask.request.get_json().get('included', [])
+    qtype = flask.request.get_json().get('qtype', '')
     sterile_included = []
     for include in included:
         package_index = int(package_names.index(include[:include.rindex('-')]))
         set_index = int(include[include.rindex('-') + 1:])
         sterile_included.append((package_index, set_index))
-    pin = generate.get_pin(sterile_included)
+    pin = generate.get_pin(sterile_included, qtype)
+    print(pin)
     return flask.jsonify(pin)
 
 @app.route('/answer', methods=['POST'])
@@ -72,6 +92,7 @@ def clear():
 @app.route('/selected/<pin>', methods=['GET'])
 def selected(pin):
     pin = int(pin, generate.REP_SIZ)
+    pin >>= generate.TYP_SIZ
     selected_boxes = []
     package_index, set_index = 0, 0
     for i in range(generate.prefix_sum[-1]):
@@ -81,9 +102,15 @@ def selected(pin):
         set_index += 1
     return flask.jsonify(selected_boxes)
 
+@app.route('/valid/<word>', methods=['GET'])
+def valid(word):
+    return flask.jsonify({
+        'valid': check_word(word)
+    })
+
 @app.route('/')
 def index():
     return flask.render_template('base.html', packages = generate.packages)
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    app.run(host = '0.0.0.0', debug = True)

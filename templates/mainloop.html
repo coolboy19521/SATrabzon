@@ -2,19 +2,37 @@
 {% block content %}
 {% set alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
 <fieldset id="content-box">
-    <legend id="score">Score: {% if is_full %}<b>{{ correct_count }}</b>{% else %}{{ correct_count }}{% endif %} / <b>{{ question_count }}</b></legend>
-    <button id="question-button" onclick="prev_question()">Previous question</button>
-    <button id="question-button" onclick="next_question()">Next question</button>
+    {% if qtype == 'quiz' %}
+        <legend id="score">Score: {% if is_full %}<b>{{ correct_count }}</b>{% else %}{{ correct_count }}{% endif %} / <b>{{ question_count }}</b></legend>
+        <button id="question-button" onclick="prev_question()">Previous question</button>
+        <button id="question-button" onclick="next_question()">Next question</button>
+    {% else %}
+        <legend id="score">SATle <b>YAY!</b></legend>
+    {% endif %}
     <div id="question-box">
-        <p><b>{{ index + 1 }}.</b> {{ question[0] }}</p>
-        {% for i in range(1,question|length - 2) %}
-            <button class="option-button" id="btn-{{ i }}" text-align="justify"><b>{{ alphabet[i - 1] }}. </b>{{ question[i][1 + (question[-1] == 2)] }}</button><br>
-        {% endfor %}
+        {% if qtype == 'quiz' %}
+            <p><b>{{ index + 1 }}.</b> {{ question[0] }}</p>
+            {% for i in range(1,question|length - 2) %}
+                <button class="option-button" id="btn-{{ i }}" text-align="justify"><b>{{ alphabet[i - 1] }}. </b>{{ question[i][1 + (question[-1] == 2)] }}</button><br>
+            {% endfor %}
+        {% else %}
+            <div id="satle-flex">
+                <div id="box-container"></div>
+                <div id="keyboard"></div>
+            </div>
+        {% endif %}
     </div>
 </fieldset>
 <script>
     document.querySelector('#pin-box').value = '{{ pin }}'
     dict = {}
+    qtype = '{{ qtype }}'
+    word = '{{ question[1] }}'.toUpperCase()
+    tries = 0
+    letter_ix = 0
+    written = ''
+    best = {}
+    keyboard_content = "QWERTYUIOP.ASDFGHJKL.ZXCVBNM"
     fill = async () => {
         response = await fetch('/selected/{{ pin }}')
         checkboxes = await response.json()
@@ -33,6 +51,109 @@
             else parent.indeterminate = true
             element.checked = true
         }
+        document.querySelector(`input[value="${qtype}"]`).checked = true
+    }
+    build_keyboard = () => {
+        keyboard = document.querySelector('#keyboard')
+        for (char of keyboard_content) {
+            if (char != '.') {
+                keyboard.innerHTML += `<button class="keyboard-button" id="key${char}" onclick=press('${char}')>${char}</button>`
+            } else keyboard.innerHTML += '<div class="flex-break"></div>'
+        }
+        keyboard.innerHTML += '<button class="keyboard-button" onclick=backspace()><</button>'
+        keyboard.innerHTML += '<button class="keyboard-button" onclick=enter()>=</button>'
+    }
+    press = (char) => {
+        len = word.length
+        if (letter_ix > len) return
+        box = document.querySelector(`#box${tries-1}${letter_ix}`)
+        box.innerHTML = char
+        written += char
+        letter_ix ++
+    }
+    enter = async () => {
+        len = word.length
+        if (letter_ix != len) return
+
+        response = await fetch(`/valid/${written.toLowerCase()}`)
+        valid = await response.json()
+
+        if (!valid['valid']) return
+
+        count = {}
+        for (i = 0; i < len; i ++) {
+            if (best[written[i]] == undefined) best[written[i]] = 0
+            if (written[i] == word[i]) {
+                box = document.querySelector(`#box${tries-1}${i}`)
+                box.style.backgroundColor = 'green'
+                box.style.color = 'white'
+
+                if (best[written[i]] < 2) {
+                    key = document.querySelector(`#key${written[i].toUpperCase()}`)
+                    key.style.backgroundColor = 'green'
+                    key.style.color = 'white'
+                    best[written[i]] = 2
+                }
+            } else {
+                if (count[word[i]] == undefined) count[word[i]] = 0
+                count[word[i]] ++;
+            }
+        }
+        for (i = 0; i < len; i ++) {
+            if (written[i] != word[i] && count[written[i]] != undefined && count[written[i]] > 0) {
+                box = document.querySelector(`#box${tries-1}${i}`)
+                box.style.backgroundColor = 'orange'
+                box.style.color = 'white'
+                count[written[i]] --;
+
+                if (best[written[i]] < 1) {
+                    key = document.querySelector(`#key${written[i].toUpperCase()}`)
+                    key.style.backgroundColor = 'orange'
+                    key.style.color = 'white'
+                    best[written[i]] = 1
+                }
+            }
+        }
+        for (i = 0; i < len; i ++) {
+            if (best[written[i]] == 0) {
+                key = document.querySelector(`#key${written[i].toUpperCase()}`)
+                key.style.backgroundColor = 'grey'
+                key.style.color = 'white'
+                best[written[i]] = 1
+            }
+        }
+        letter_ix = 0
+        if (written != word) {
+            if (tries != len + 1) {
+                add_box()
+            } else {
+                alert(`The word was "${camelCase(word)}"`)
+                add_box()
+                for (char of word) {
+                    press(char)
+                }
+                for (i = 0; i < len; i ++) {
+                    box = document.querySelector(`#box${tries-1}${i}`)
+                    box.style.backgroundColor = 'black'
+                    box.style.color = 'white'
+                }
+                letter_ix = 1000
+            }
+        } else {
+            letter_ix = 1000
+        }
+        written = ''
+    }
+    camelCase = (word) => {
+        return word[0].toUpperCase() + word.slice(1, word.length).toLowerCase();
+    }
+    backspace = () => {
+        len = word.length
+        if (letter_ix == 0) return
+        if (letter_ix > len) return
+        box = document.querySelector(`#box${tries-1}${-- letter_ix}`)
+        box.innerHTML = ''
+        written = written.slice(0, -1);
     }
     prev_question = () => {
         if (Number("{{ index - 1 }}") >= 0)
@@ -40,6 +161,19 @@
     }
     next_question = () => {
         window.location.href = '/mainloop/{{ pin }}/{{ index + 1 }}'
+    }
+    add_box = () => {
+        len = word.length
+        question_box = document.querySelector('#box-container')
+        add = ''
+        if (tries != 0) add += '<div class="flex-break"></div>'
+        add += '<div style="display:flex;flex-wrap:nowrap;">'
+        for (i = 0; i < len; i ++) {
+            add += `<div class="box" id='box${tries}${i}'></div>`
+        }
+        add += '</div>'
+        question_box.innerHTML += add
+        tries ++
     }
     op_btns = document.querySelectorAll('.option-button')
     question = {{ question | tojson }}
@@ -66,15 +200,21 @@
                 }
                 if (!is_correct){
                     this.style.borderColor = 'red'
-                    this.style.borderWidth = '2px'
+                    this.style.borderWidth = '4px'
                 }
                 document.querySelector(`#btn-${question[question.length - 2] + 1}`).style.borderColor = 'green'
-                document.querySelector(`#btn-${question[question.length - 2] + 1}`).style.borderWidth = '2px'
+                document.querySelector(`#btn-${question[question.length - 2] + 1}`).style.borderWidth = '4px'
                 done = true
             }
         })
     }
     fill()
+
+    if (qtype == 'satle') {
+        add_box()
+        build_keyboard()
+    }
+
     choice = {{ choice }}
     if (choice != -1){
         op_btns[choice].click()

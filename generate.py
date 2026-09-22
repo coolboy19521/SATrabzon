@@ -6,7 +6,9 @@ import random
 COR_CNS = 3
 QST_TYP = 3
 OPT_SIZ = 4
+TYP_SIZ = 1
 ALT_CNT = 4
+SIZ_LIM = 8
 BIT_SIZ = 12
 REP_SIZ = 16
 PNC_SYM = ',.:-'
@@ -14,6 +16,7 @@ SRC_DIR = 'sets'
 PLC_HLD = '______'
 PKG_FIL = 'packages.csv'
 OBY_WRD = ('to', 'a', 'the', 'an')
+QTYPES = ('quiz', 'satle')
 
 with open(PKG_FIL, "r") as src:
     packages = list(csv.reader(src))
@@ -29,12 +32,14 @@ prefix_sum = [0 for _ in range(len(packages) + 1)]
 for i in range(0, len(packages)):
     prefix_sum[i + 1] = prefix_sum[i] + int(packages[i][1])
 
-def get_pin(included):
+def get_pin(included, qtype):
     pin = 0
     for package_index, set_index in included:
        pin |= 1 << (prefix_sum[package_index] + set_index)
     rng = random.Random(os.urandom(BIT_SIZ >> 3))
     pin |= rng.randint(0, 1 << BIT_SIZ) << prefix_sum[-1]
+    pin <<= TYP_SIZ
+    pin |= QTYPES.index(qtype)
     return hex(pin)
 
 def extract_example(search_word):
@@ -56,8 +61,35 @@ def get_similarity(a, b):
         else: break
     return common_suffix
 
+def get_type(pin):
+    return QTYPES[int(pin, REP_SIZ) & ((1 << TYP_SIZ) - 1)]
+
+def get_word(pin, index):
+    pin = int(pin, REP_SIZ)
+    pin >>= TYP_SIZ
+    words = []
+    package_index, set_index = 0, 0
+    for i in range(prefix_sum[-1]):
+        if i == prefix_sum[package_index + 1]:
+            package_index, set_index = package_index + 1, 0
+        if pin & 1 << i: words += all_words[package_index][set_index]
+        set_index += 1
+    question_type = index // ALT_CNT % QST_TYP
+    revolution_count = (index // len(words)) + 1
+    seed = pin >> prefix_sum[-1]
+    answer_rng = random.Random(seed << revolution_count)
+    answer_rng.shuffle(words)
+    local_index = index % len(words)
+    ans = words[((local_index // ALT_CNT)) * ALT_CNT + (local_index % ALT_CNT)]
+    if len(ans[1]) > SIZ_LIM:
+        pin <<= TYP_SIZ
+        pin |= QTYPES.index('satle')
+        return get_word(hex(pin), index + 1)
+    return ans
+
 def get_question(pin, index):
     pin = int(pin, REP_SIZ)
+    pin >>= TYP_SIZ
     words = []
     package_index, set_index = 0, 0
     for i in range(prefix_sum[-1]):
